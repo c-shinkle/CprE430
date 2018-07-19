@@ -195,7 +195,30 @@ void default_print(register const u_char *bp, register u_int length) {
   }
 }
 
-void printIPHeader(const u_char *p) {}
+void printIPHeader(const u_char *p) {
+  printf("Version = %d\n", p[14] >> 4);
+  printf("Header Length = %d\n", p[14] & 0x0f);
+  printf("Type of Service = %d\n", p[15]);
+
+  int length = (p[16] << 8) | p[17];
+  printf("Payload length = %d\n", length);
+
+  int identifier = (p[18] << 8) | p[19];
+  printf("Identifier = %d\n", identifier);
+
+  int df = (p[20] & 0x40) ? 1 : 0;
+  int mf = (p[20] & 0x20) ? 1 : 0;
+  printf("Flags = 0, %d, %d\n", df, mf);
+
+  int frag_offset = ((p[20] & 0x1f) << 8) | p[21];
+  printf("Fragment Offset = %d\n", frag_offset);
+  printf("Time to Live = %d\n", p[22]);
+  printf("Protocol = %d\n", p[23]);
+
+  int check = (p[24] << 8) | p[25];
+  printf("Checksum = %d\n", check);
+  printf("IP Address = %03d.%03d.%03d.%03d\n", p[26], p[27], p[28], p[29]);
+}
 
 void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p) {
   u_int length = h->len;
@@ -211,14 +234,14 @@ void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p) {
 
   uint16_t e_type = ntohs((uint16_t) * &p[12]);
 
-  printf("Type = 0x%04X", e_type);
+  printf("Type = 0x%04X\n", e_type);
 
   if (e_type == 0x800) {
-    printf("\nPayload = IP");
+    printf("Payload = IP\n");
     num_ip_packets++;
     printIPHeader(p);
   } else if (e_type == 0x806) {
-    printf("\nPayload = ARP");
+    printf("Payload = ARP\n");
     num_arp_packets++;
   } else {
     num_broadcast_packets++;
