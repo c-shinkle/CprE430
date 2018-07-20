@@ -18,6 +18,8 @@ RETSIGTYPE (*setsignal(int, RETSIGTYPE (*)(int)))(int);
 char cpre580f98[] = "netdump";
 
 void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p);
+void printIPHeader(const u_char *p);
+void printICMPHeader(const u_char *p);
 
 int packettype;
 
@@ -36,6 +38,7 @@ int snaplen = 1500;
 
 int num_ip_packets = 0;
 int num_arp_packets = 0;
+int num_icmp_packets = 0;
 int num_broadcast_packets = 0;
 
 static pcap_t *pd;
@@ -145,6 +148,7 @@ void program_ending(int signo) {
   printf("%d IP packets were printed out\n", num_ip_packets);
   printf("%d ARP packets were printed out\n", num_arp_packets);
   printf("%d broadcast packets were printed out\n", num_broadcast_packets);
+  printf("%d ICMP packets were printed out\n", num_icmp_packets);
   exit(0);
 }
 
@@ -213,11 +217,28 @@ void printIPHeader(const u_char *p) {
   int frag_offset = ((p[20] & 0x1f) << 8) | p[21];
   printf("Fragment Offset = %d\n", frag_offset);
   printf("Time to Live = %d\n", p[22]);
-  printf("Protocol = %d\n", p[23]);
+
+  int protocol = p[23];
+  printf("Protocol = %d\n", protocol);
 
   int check = (p[24] << 8) | p[25];
   printf("Checksum = %d\n", check);
+  // source bytes 26 - 29
   printf("IP Address = %03d.%03d.%03d.%03d\n", p[26], p[27], p[28], p[29]);
+  // destination bytes 30 - 33
+  if (protocol == 1) {
+    printICMPHeader(p);
+    num_icmp_packets++;
+  }
+}
+
+void printICMPHeader(const u_char *p) {
+  printf("ICMP Header:\n");
+  printf("Type = %d\n", p[34]);
+  printf("Code = %d\n", p[35]);
+
+  int check = (p[36] << 8) | p[37];
+  printf("Checksum = %d\n", check);
 }
 
 void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p) {
