@@ -18,6 +18,7 @@ RETSIGTYPE (*setsignal(int, RETSIGTYPE (*)(int)))(int);
 char cpre580f98[] = "netdump";
 
 void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p);
+void printARPHeader(const u_char *p);
 void printIPHeader(const u_char *p);
 void printICMPHeader(const u_char *p);
 
@@ -199,6 +200,33 @@ void default_print(register const u_char *bp, register u_int length) {
   }
 }
 
+void printARPHeader(const u_char *p) {
+  int hw_type = (p[14] << 8) | p[15];
+  printf("Hardware Type = %d\n", hw_type);
+
+  int prot_type = (p[16] << 8) | p[17];
+  printf("Protocol Type = %d\n", prot_type);
+
+  printf("Hardware Length = %d\n", p[18]);
+
+  printf("Protocol Length  = %d\n", p[19]);
+
+  int oper = (p[20] << 8) | p[21];
+  printf("Operation = %d\n", oper);
+
+  printf("Sender Hardware Address = %02X:%02X:%02X:%02X:%02X:%02X\n", p[22],
+         p[23], p[24], p[25], p[26], p[27]);
+
+  printf("Sender IP Address = %03d.%03d.%03d.%03d\n", p[28], p[29], p[30],
+         p[31]);
+
+  printf("Target Hardware Address = %02X:%02X:%02X:%02X:%02X:%02X\n", p[32],
+         p[33], p[34], p[35], p[36], p[37]);
+
+  printf("Target IP Address = %03d.%03d.%03d.%03d\n", p[38], p[39], p[40],
+         p[41]);
+}
+
 void printIPHeader(const u_char *p) {
   printf("Version = %d\n", p[14] >> 4);
   printf("Header Length = %d\n", p[14] & 0x0f);
@@ -263,6 +291,7 @@ void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p) {
     printIPHeader(p);
   } else if (e_type == 0x806) {
     printf("Payload = ARP\n");
+    printARPHeader(p);
     num_arp_packets++;
   } else {
     num_broadcast_packets++;
