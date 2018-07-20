@@ -21,6 +21,7 @@ void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p);
 void printARPHeader(const u_char *p);
 void printIPHeader(const u_char *p);
 void printICMPHeader(const u_char *p);
+void printTCPHeader(const u_char *p);
 
 int packettype;
 
@@ -41,6 +42,8 @@ int num_ip_packets = 0;
 int num_arp_packets = 0;
 int num_icmp_packets = 0;
 int num_broadcast_packets = 0;
+int num_tcp_packets = 0;
+int num_udp_packets = 0;
 
 static pcap_t *pd;
 
@@ -150,6 +153,8 @@ void program_ending(int signo) {
   printf("%d ARP packets were printed out\n", num_arp_packets);
   printf("%d broadcast packets were printed out\n", num_broadcast_packets);
   printf("%d ICMP packets were printed out\n", num_icmp_packets);
+  printf("%d TCP packets were printed out\n", num_tcp_packets);
+  printf("%d UDP packets were printed out\n", num_udp_packets);
   exit(0);
 }
 
@@ -257,6 +262,11 @@ void printIPHeader(const u_char *p) {
   if (protocol == 1) {
     printICMPHeader(p);
     num_icmp_packets++;
+  } else if (protocol == 6) {
+    printTCPHeader(p);
+    num_tcp_packets++;
+  } else if (protocol == 17) {
+    num_udp_packets++;
   }
 }
 
@@ -267,6 +277,37 @@ void printICMPHeader(const u_char *p) {
 
   int check = (p[36] << 8) | p[37];
   printf("Checksum = %d\n", check);
+}
+
+void printTCPHeader(const u_char *p) {
+  printf("TCP Header:\n");
+
+  int src_port = (p[34] << 8) | p[35];
+  printf("Source Port Number = %d\n", src_port);
+
+  int dest_port = (p[36] << 8) | p[37];
+  printf("Destination Port Number = %d\n", dest_port);
+
+  int sequ_num = p[38] << 24 | p[39] << 16 | p[40] << 8 | p[41];
+  printf("Sequence Number = %d\n", sequ_num);
+
+  int ackn_num = p[42] << 24 | p[43] << 16 | p[44] << 8 | p[45];
+  printf("Acknowledgement Number = %d\n", ackn_num);
+
+  int hdr_len = p[46] << 4;
+  printf("Header Length = %d\n", hdr_len);
+
+  int flags = p[47] & 0x3f;
+  printf("Flags = %d\n", flags);
+
+  int win_size = (p[48] << 8) | p[49];
+  printf("Window Size = %d\n", win_size);
+
+  int check = (p[50] << 8) | p[51];
+  printf("Checksum = %d\n", check);
+
+  int urg_ptr = (p[52] << 8) | p[53];
+  printf("Urgent Pointer = %d\n", urg_ptr);
 }
 
 void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p) {
