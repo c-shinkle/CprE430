@@ -47,6 +47,7 @@ int num_tcp_packets = 0;
 int num_udp_packets = 0;
 int num_smtp_packets = 0;
 int num_pop_packets = 0;
+int num_imap_packets = 0;
 
 static pcap_t *pd;
 
@@ -158,6 +159,9 @@ void program_ending(int signo) {
   printf("%d ICMP packets were printed out\n", num_icmp_packets);
   printf("%d TCP packets were printed out\n", num_tcp_packets);
   printf("%d UDP packets were printed out\n", num_udp_packets);
+  printf("%d SMTP packets were printed out\n", num_smtp_packets);
+  printf("%d POP packets were printed out\n", num_pop_packets);
+  printf("%d IMAP packets were printed out\n", num_imap_packets);
   exit(0);
 }
 
@@ -312,7 +316,7 @@ void printTCPHeader(const u_char *p, u_int length) {
   int urg_ptr = (p[52] << 8) | p[53];
   printf("Urgent Pointer = %d\n", urg_ptr);
 
-  if (src_port == 25 || src_port == 465 || src_port == 587) {
+  if (dest_port == 25 || dest_port == 465 || dest_port == 587) {
     printf("Simple Mail Transfer Protocol:\n");
     num_smtp_packets++;
     printTCPPayload(p, length);
@@ -321,6 +325,12 @@ void printTCPHeader(const u_char *p, u_int length) {
   if (src_port == 110 || src_port == 995) {
     printf("Post Office Protocol:\n");
     num_pop_packets++;
+    printTCPPayload(p, length);
+  }
+
+  if (src_port == 143 || src_port == 993) {
+    printf("Internet Message Agent Protocol:\n");
+    num_imap_packets++;
     printTCPPayload(p, length);
   }
 }
