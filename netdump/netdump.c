@@ -48,6 +48,7 @@ int num_udp_packets = 0;
 int num_smtp_packets = 0;
 int num_pop_packets = 0;
 int num_imap_packets = 0;
+int num_http_packets = 0;
 
 static pcap_t *pd;
 
@@ -162,6 +163,7 @@ void program_ending(int signo) {
   printf("%d SMTP packets were printed out\n", num_smtp_packets);
   printf("%d POP packets were printed out\n", num_pop_packets);
   printf("%d IMAP packets were printed out\n", num_imap_packets);
+  printf("%d HTTP packets were printed out\n", num_http_packets);
   exit(0);
 }
 
@@ -331,6 +333,12 @@ void printTCPHeader(const u_char *p, u_int length) {
   if (src_port == 143 || src_port == 993) {
     printf("Internet Message Agent Protocol:\n");
     num_imap_packets++;
+    printTCPPayload(p, length);
+  }
+
+  if (src_port == 80 || src_port == 8080) {
+    printf("Hypertext Transfer Protocol:\n");
+    num_http_packets++;
     printTCPPayload(p, length);
   }
 }
