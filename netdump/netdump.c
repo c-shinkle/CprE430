@@ -19,9 +19,10 @@ char cpre580f98[] = "netdump";
 
 void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p);
 void printARPHeader(const u_char *p);
-void printIPHeader(const u_char *p);
+void printIPHeader(const u_char *p, u_int length);
 void printICMPHeader(const u_char *p);
-void printTCPHeader(const u_char *p);
+void printTCPHeader(const u_char *p, u_int length);
+void printTCPPayload(const u_char *p, u_int length);
 
 int packettype;
 
@@ -44,6 +45,8 @@ int num_icmp_packets = 0;
 int num_broadcast_packets = 0;
 int num_tcp_packets = 0;
 int num_udp_packets = 0;
+int num_smtp_packets = 0;
+int num_pop_packets = 0;
 
 static pcap_t *pd;
 
@@ -232,13 +235,13 @@ void printARPHeader(const u_char *p) {
          p[41]);
 }
 
-void printIPHeader(const u_char *p) {
+void printIPHeader(const u_char *p, u_int length) {
   printf("Version = %d\n", p[14] >> 4);
   printf("Header Length = %d\n", p[14] & 0x0f);
   printf("Type of Service = %d\n", p[15]);
 
-  int length = (p[16] << 8) | p[17];
-  printf("Payload length = %d\n", length);
+  int pl_length = (p[16] << 8) | p[17];
+  printf("Payload length = %d, Actual length = %d\n", pl_length, length);
 
   int identifier = (p[18] << 8) | p[19];
   printf("Identifier = %d\n", identifier);
@@ -263,7 +266,7 @@ void printIPHeader(const u_char *p) {
     printICMPHeader(p);
     num_icmp_packets++;
   } else if (protocol == 6) {
-    printTCPHeader(p);
+    printTCPHeader(p, length);
     num_tcp_packets++;
   } else if (protocol == 17) {
     num_udp_packets++;
@@ -279,7 +282,7 @@ void printICMPHeader(const u_char *p) {
   printf("Checksum = %d\n", check);
 }
 
-void printTCPHeader(const u_char *p) {
+void printTCPHeader(const u_char *p, u_int length) {
   printf("TCP Header:\n");
 
   int src_port = (p[34] << 8) | p[35];
@@ -308,6 +311,27 @@ void printTCPHeader(const u_char *p) {
 
   int urg_ptr = (p[52] << 8) | p[53];
   printf("Urgent Pointer = %d\n", urg_ptr);
+
+  if (src_port == 25 || src_port == 465 || src_port == 587) {
+    printf("Simple Mail Transfer Protocol:\n");
+    num_smtp_packets++;
+    printTCPPayload(p, length);
+  }
+
+  if (src_port == 110 || src_port == 995) {
+    printf("Post Office Protocol:\n");
+    num_pop_packets++;
+    printTCPPayload(p, length);
+  }
+}
+
+void printTCPPayload(const u_char *p, u_int length) {
+  const u_char *ptr = p + 54;
+  u_int i = 53;
+
+  for (; i < length; ptr++, i++) {
+    printf("%c", *ptr);
+  }
 }
 
 void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p) {
@@ -329,7 +353,7 @@ void raw_print(u_char *user, const struct pcap_pkthdr *h, const u_char *p) {
   if (e_type == 0x800) {
     printf("Payload = IP\n");
     num_ip_packets++;
-    printIPHeader(p);
+    printIPHeader(p, length);
   } else if (e_type == 0x806) {
     printf("Payload = ARP\n");
     printARPHeader(p);
