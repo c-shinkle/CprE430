@@ -266,7 +266,7 @@ void printIPHeader(const u_char *p, u_int length) {
   int check = (p[24] << 8) | p[25];
   printf("Checksum = %d\n", check);
   // source bytes 26 - 29
-  printf("IP Address = %03d.%03d.%03d.%03d\n", p[26], p[27], p[28], p[29]);
+  printf("IP Address = %d.%d.%d.%d\n", p[26], p[27], p[28], p[29]);
   // destination bytes 30 - 33
   if (protocol == 1) {
     printICMPHeader(p);
