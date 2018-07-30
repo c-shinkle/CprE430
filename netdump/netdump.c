@@ -272,7 +272,7 @@ void printIPHeader(const u_char *p, u_int length) {
     printICMPHeader(p);
     num_icmp_packets++;
   } else if (protocol == 6) {
-    printTCPHeader(p, length);
+    printTCPHeader(p, pl_length);
     num_tcp_packets++;
   } else if (protocol == 17) {
     num_udp_packets++;
