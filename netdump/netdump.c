@@ -286,6 +286,9 @@ void printICMPHeader(const u_char *p) {
 
   int check = (p[36] << 8) | p[37];
   printf("Checksum = %d\n", check);
+
+  int data = p[38] << 24 | p[39] << 16 | p[40] << 8 | p[41];
+  printf("Data = %x", data);
 }
 
 void printTCPHeader(const u_char *p, u_int length) {
